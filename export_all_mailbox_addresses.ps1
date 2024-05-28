@@ -2,4 +2,25 @@
 
 Connect-ExchangeOnline -UserPrincipalName your-email@domain.com
 
-Get-Mailbox -ResultSize Unlimited | ForEach-Object { $primary = $_.PrimarySmtpAddress; $others = $_.EmailAddresses | Where-Object {$_ -like "SMTP:*" -and $_ -ne "SMTP:$primary"} | ForEach-Object {$_ -replace "SMTP:"}; "$($_.DisplayName), $primary, $($others -join "; ")}" } | Export-Csv  C:\__\addresen.csv
+
+# Abrufen aller E-Mail-Adressen vom Typ SMTP
+$mailboxes = Get-Recipient -ResultSize Unlimited | Where-Object {$_.PrimarySmtpAddress -like '*@*'} | Select-Object DisplayName,PrimarySmtpAddress,EmailAddresses
+
+# Filtern der SMTP-Adressen und Entfernen unerwünschter Klammern
+$smtpAddresses = @()
+foreach ($mailbox in $mailboxes) {
+    foreach ($email in $mailbox.EmailAddresses) {
+        if ($email.PrefixString -eq 'SMTP') {
+            $smtpAddresses += [pscustomobject]@{
+                DisplayName = $mailbox.DisplayName
+                PrimarySmtpAddress = $mailbox.PrimarySmtpAddress
+                SMTPAddress = $email.AddressString.Trim('}')
+            }
+        }
+    }
+}
+
+# Exportieren der Daten in eine CSV-Datei mit Spaltenbeschreibung
+$smtpAddresses | Export-Csv -Path "C:\__\addresen.csv" -NoTypeInformation -Encoding UTF8 -Delimiter ','
+
+
