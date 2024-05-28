@@ -1,4 +1,5 @@
 #Install-Module -Name ExchangeOnlineManagement
+#Set-ExecutionPolicy RemoteSigned
 
 Connect-ExchangeOnline -UserPrincipalName your-email@domain.com
 
