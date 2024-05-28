@@ -1,27 +1,5 @@
 #Install-Module -Name ExchangeOnlineManagement
 #Set-ExecutionPolicy RemoteSigned
-
 Connect-ExchangeOnline -UserPrincipalName your-email@domain.com
-
-
-# Abrufen aller E-Mail-Adressen vom Typ SMTP
-$mailboxes = Get-Recipient -ResultSize Unlimited | Where-Object {$_.PrimarySmtpAddress -like '*@*'} | Select-Object DisplayName,PrimarySmtpAddress,EmailAddresses
-
-# Filtern der SMTP-Adressen und Entfernen unerwünschter Klammern
-$smtpAddresses = @()
-foreach ($mailbox in $mailboxes) {
-    foreach ($email in $mailbox.EmailAddresses) {
-        if ($email.PrefixString -eq 'SMTP') {
-            $smtpAddresses += [pscustomobject]@{
-                DisplayName = $mailbox.DisplayName
-                PrimarySmtpAddress = $mailbox.PrimarySmtpAddress
-                SMTPAddress = $email.AddressString.Trim('}')
-            }
-        }
-    }
-}
-
-# Exportieren der Daten in eine CSV-Datei mit Spaltenbeschreibung
-$smtpAddresses | Export-Csv -Path "C:\__\addresen.csv" -NoTypeInformation -Encoding UTF8 -Delimiter ','
-
-
+ 
+ Get-Recipient -ResultSize Unlimited | Where-Object {$_.PrimarySmtpAddress -like '*@*'} | ForEach-Object { $_.EmailAddresses | Where-Object { $_.PrefixString -eq 'SMTP' } | ForEach-Object { [pscustomobject]@{ DisplayName = $_.DisplayName; PrimarySmtpAddress = $_.PrimarySmtpAddress; SMTPAddress = $_.AddressString.Trim('}') } } } | Export-Csv -Path "C:\__addresen.csv" -NoTypeInformation -Encoding UTF8
